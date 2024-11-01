@@ -23,4 +23,4 @@ class Controller:
             self.begin_process()
 
     def begin_process(self):
-        pass
+        print("Running scrape...")

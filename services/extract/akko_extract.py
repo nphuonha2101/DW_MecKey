@@ -157,9 +157,9 @@ class AkkoExtract(AbsExtract, ABC):
         super().__init__(database_manager)
         self.feed_key = os.getenv('AKKO_FEED_KEY')
 
-    def scrape_product_details(self, detail_url, update_progress):
+    def scrape_product_details(self, detail_url):
         """Trích xuất thông tin chi tiết của sản phẩm từ trang chi tiết."""
-        detail_response = self.fetch_page(detail_url, update_progress)
+        detail_response = self.fetch_page(detail_url)
         if detail_response is None:
             return {}
 
