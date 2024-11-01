@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
 
 from db.db_manager import DatabaseManager
+from event.event_bus import EventBus
 from event.event_level import EventLevel
 from services.abstract_services import AbstractService
 import requests
 
 
 class AbsExtract(AbstractService, ABC):
-    def __init__(self, database_manager: DatabaseManager):
-        super().__init__(database_manager)
+    def __init__(self, database_manager: DatabaseManager, event_bus: EventBus):
+        super().__init__(database_manager, event_bus)
+
 
     def fetch_page(self, url):
         """Gửi yêu cầu đến một URL và trả về phản hồi."""

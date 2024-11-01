@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 from db.db_manager import DatabaseManager
+from event.event_bus import EventBus
 from event.event_level import EventLevel
 from model.file_config import FileConfig
 from services.extract.abs_extract import AbsExtract
@@ -153,8 +154,8 @@ def parse_product(product):
 
 
 class AkkoExtract(AbsExtract, ABC):
-    def __init__(self, database_manager: DatabaseManager):
-        super().__init__(database_manager)
+    def __init__(self, database_manager: DatabaseManager, event_bus: EventBus):
+        super().__init__(database_manager, event_bus)
         self.feed_key = os.getenv('AKKO_FEED_KEY')
 
     def scrape_product_details(self, detail_url):
