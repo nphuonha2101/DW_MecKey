@@ -12,6 +12,7 @@ from event.event_bus import EventBus
 from event.event_level import EventLevel
 from event.event_type import EventType
 from model.file_config import FileConfig
+from model.file_log import FileLog
 
 load_dotenv()
 
@@ -39,12 +40,11 @@ class AbstractService(ABC):
                 os.getenv('CONTROL_DB_NAME')
             )
 
-            query = f"SELECT * FROM ${os.getenv('FILE_CONFIG_TABLE_NAME')} WHERE feed_key = %s"
+            query = f"SELECT * FROM {os.getenv('FILE_CONFIG_TABLE_NAME')} WHERE feed_key = %s"
             result = self.database_manager.call_query(query, (feed_key,))
 
-            file_config = FileConfig(*result[0])
+            file_config = FileConfig.from_db(result[0])
 
-            self.database_manager.close_connection()
             return file_config
         except Exception as e:
             throw_error(e)
@@ -60,14 +60,13 @@ class AbstractService(ABC):
                 os.getenv('CONTROL_DB_NAME')
             )
 
-            query = f"INSERT INTO ${os.getenv('FILE_LOG_TABLE_NAME')} (id_config, status, file_path) VALUES (%s, %s, %s)"
+            query = f"INSERT INTO {os.getenv('FILE_LOG_TABLE_NAME')} (id_config, status, file_path) VALUES (%s, %s, %s)"
             self.database_manager.call_query(query, (id_config, status, file_path))
 
             last_id_query = "SELECT LAST_INSERT_ID()"
             last_id_result = self.database_manager.call_query(last_id_query)
             last_id = last_id_result[0][0]
 
-            self.database_manager.close_connection()
             return last_id
         except Exception as e:
             throw_error(e)
@@ -83,10 +82,9 @@ class AbstractService(ABC):
                 os.getenv('CONTROL_DB_NAME')
             )
 
-            query = f"UPDATE ${os.getenv('FILE_LOG_TABLE_NAME')} SET status = %s WHERE id = %s"
+            query = f"UPDATE {os.getenv('FILE_LOG_TABLE_NAME')} SET status = %s WHERE id = %s"
             self.database_manager.call_query(query, (status, id))
 
-            self.database_manager.close_connection()
         except Exception as e:
             throw_error(e)
         finally:
@@ -101,11 +99,11 @@ class AbstractService(ABC):
                 os.getenv('CONTROL_DB_NAME')
             )
 
-            query = f"SELECT * FROM ${os.getenv('FILE_LOG_TABLE_NAME')} WHERE id = %s"
+            query = f"SELECT * FROM {os.getenv('FILE_LOG_TABLE_NAME')} WHERE id = %s"
             result = self.database_manager.call_query(query, (id,))
+            file_log = FileLog.from_db(result[0])
 
-            self.database_manager.close_connection()
-            return result
+            return file_log
         except Exception as e:
             throw_error(e)
         finally:

@@ -5,6 +5,8 @@ from event.event_bus import EventBus
 from event.event_level import EventLevel
 from event.event_type import EventType
 from gui.gui import GUI
+from app_module.injector_init import injector
+from services.extract.akko_extract import AkkoExtract
 
 
 class Controller:
@@ -23,4 +25,5 @@ class Controller:
             self.begin_process()
 
     def begin_process(self):
-        print("Running scrape...")
+        akko_extract = injector.get(AkkoExtract)
+        akko_extract.run()

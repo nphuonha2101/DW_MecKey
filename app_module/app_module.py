@@ -1,9 +1,9 @@
 from injector import Module, provider, singleton
 
-from controller.controller import Controller
 from db.db_manager import DatabaseManager
-from event.event_bus import EventBus
+
 from gui.gui import GUI
+from event.event_bus import EventBus
 from services.extract.akko_extract import AkkoExtract
 
 
@@ -26,10 +26,5 @@ class AppModule(Module):
 
     @singleton
     @provider
-    def provider_controller(self, event_bus: EventBus, gui: GUI) -> Controller:
-        return Controller(event_bus, gui)
-
-    @singleton
-    @provider
-    def provider_akko_extract(self, database_manager: DatabaseManager) -> AkkoExtract:
-        return AkkoExtract(database_manager)
+    def provider_akko_extract(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoExtract:
+        return AkkoExtract(database_manager, event_bus)

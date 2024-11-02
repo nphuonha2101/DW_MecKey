@@ -5,3 +5,13 @@ class FileLog:
         self.status = status
         self.time = time
         self.file_path = file_path
+
+    @classmethod
+    def from_db(cls, result):
+        return cls(
+            id=result['id'],
+            id_config=result['id_config'],
+            status=result['status'],
+            time=result['time'],
+            file_path=result['file_path']
+        )

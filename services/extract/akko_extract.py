@@ -157,6 +157,12 @@ class AkkoExtract(AbsExtract, ABC):
     def __init__(self, database_manager: DatabaseManager, event_bus: EventBus):
         super().__init__(database_manager, event_bus)
         self.feed_key = os.getenv('AKKO_FEED_KEY')
+        try:
+            self.config: FileConfig = self.get_file_config(self.feed_key)
+            print(f"Configuration loaded: {self.config}")
+        except Exception as e:
+            self.update_ui(EventLevel.ERROR, f"Failed to load configuration. Caused by: {e}")
+            print(f"Error: {e}")
 
     def scrape_product_details(self, detail_url):
         """Trích xuất thông tin chi tiết của sản phẩm từ trang chi tiết."""
@@ -174,10 +180,6 @@ class AkkoExtract(AbsExtract, ABC):
 
         # Check for ul tags
         ul_tags = detail_soup.find_all('ul')
-        if ul_tags:
-            print(f"Found {len(ul_tags)} <ul> tags")
-        else:
-            print("No <ul> tags found")
 
         for ul in ul_tags:
             li = ul.find('li', string=lambda content: "Model" in content if content else False)
@@ -187,10 +189,6 @@ class AkkoExtract(AbsExtract, ABC):
 
         # Check for p tags
         p_tags = detail_soup.find_all('p')
-        if p_tags:
-            print(f"Found {len(p_tags)} <p> tags")
-        else:
-            print("No <p> tags found")
 
         for p_tag in p_tags:
             if 'Model' in p_tag.get_text():
@@ -200,17 +198,26 @@ class AkkoExtract(AbsExtract, ABC):
         print("No relevant tags found")
         return {}
 
-    def extract(self, num_pages):
-        config: FileConfig = self.get_file_config(self.feed_key)
-        if config is None:
+    def extract(self, num_pages: int):
+
+        if self.config is None:
             self.update_ui(EventLevel.ERROR, "Failed to load configuration.")
             return
-        base_url = config.source_url
-        data_path = config.file_path
+        base_url = self.config.source_url
+        data_path = self.config.folder_data_path
 
         file_path = generate_file_name(data_path)
 
-        log_id = self.create_file_log(config.id, ServiceStatus.RE, file_path)
+        print(f"Config ID: {self.config.id}")
+        print(f"Service Status: {ServiceStatus.RE.value}")
+        print(f"File Path: {file_path}")
+
+        try:
+            log_id = self.create_file_log(self.config.id, ServiceStatus.RE.value, file_path)
+        except Exception as e:
+            self.update_ui(EventLevel.ERROR, f"Failed to create file log. Caused by: {e}")
+            print(f"Error: {e}")
+            return
 
         product_details = []
         num_pages = int(num_pages)
@@ -263,13 +270,12 @@ class AkkoExtract(AbsExtract, ABC):
         print(f"Data saved to '{absolute_path}'.")
         self.update_ui(EventLevel.SUCCESS, f"Data saved to '{absolute_path}'.")
 
-        self.update_file_log(log_id, ServiceStatus.SE)
+        self.update_file_log(log_id, ServiceStatus.SE.value)
 
     def run(self):
         try:
-            page = os.getenv('AKKO_PAGE')
             self.update_ui(EventLevel.INFO, f"${self.__class__.__name__}" + " is running")
-            self.extract(page)
+            self.extract(self.config.num_pages)
             self.update_ui(EventLevel.SUCCESS, f"${self.__class__.__name__}" + " is finished")
         except Exception as e:
             self.update_ui(EventLevel.ERROR, f"${self.__class__.__name__} got problem. Caused by: {e}")
