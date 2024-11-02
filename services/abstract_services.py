@@ -99,8 +99,8 @@ class AbstractService(ABC):
             )
 
             query = f"SELECT * FROM {os.getenv('FILE_LOG_TABLE_NAME')} WHERE id = %s"
-            result = self.database_manager.call_query(query, (id,))
-            file_log = FileLog.from_db(result[0])
+            results = self.database_manager.call_query(query, (id,))
+            file_log = FileLog.from_db(results[0])
 
             return file_log
         except Exception as e:
@@ -108,7 +108,24 @@ class AbstractService(ABC):
         finally:
             self.database_manager.close_connection()
 
+    def get_file_log_by_status_and_feed_key(self, status, feed_key):
+        try:
+            self.database_manager.connect_to_db(
+                os.getenv('CONTROL_DB_HOST'),
+                os.getenv('CONTROL_DB_USER'),
+                os.getenv('CONTROL_DB_PASSWORD'),
+                os.getenv('CONTROL_DB_NAME')
+            )   
 
+            query = f"SELECT * FROM {os.getenv('FILE_LOG_TABLE_NAME')} WHERE status = %s AND id_config = (SELECT id FROM {os.getenv('FILE_CONFIG_TABLE_NAME')} WHERE feed_key = %s)"
+            results = self.database_manager.call_query(query, (status, feed_key))
+            file_log = FileLog.from_db(results[0])
+
+            return file_log
+        except Exception as e:
+            raise RuntimeError(e)
+        finally:
+            self.database_manager.close_connection()
 
 
 

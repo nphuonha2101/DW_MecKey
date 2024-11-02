@@ -20,7 +20,7 @@ class DatabaseManager:
         self.cursor.close()
         self.connection.close()
 
-    def call_procedure(self, procedure_name, args):
+    def call_procedure(self, procedure_name, args=None):
         try:
             self.cursor.callproc(procedure_name, args)
             self.connection.commit()
@@ -36,7 +36,7 @@ class DatabaseManager:
         except Exception as e:
             raise RuntimeError(e)
 
-    def call_function(self, function_name, args):
+    def call_function(self, function_name, args=None):
         try:
             self.cursor.callfunc(function_name, args)
             self.connection.commit()
