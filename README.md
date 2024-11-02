@@ -29,9 +29,6 @@ This project implements a data pipeline to extract, transform and load (ETL) mec
   - mypy
 
 ## Project Structure
-GitHub Copilot
-Here's the README in Markdown format that you can directly save as README.md:
-
 ```
 ├── app_module/         # Dependency injection configuration 
 ├── controller/         # Application controller 
