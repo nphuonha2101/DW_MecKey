@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 from injector import inject
-from numpy.f2py.auxfuncs import throw_error
 
 from db.db_manager import DatabaseManager
 import os
@@ -47,7 +46,7 @@ class AbstractService(ABC):
 
             return file_config
         except Exception as e:
-            throw_error(e)
+            raise RuntimeError(e)
         finally:
             self.database_manager.close_connection()
 
@@ -69,7 +68,7 @@ class AbstractService(ABC):
 
             return last_id
         except Exception as e:
-            throw_error(e)
+            raise RuntimeError(e)
         finally:
             self.database_manager.close_connection()
 
@@ -86,7 +85,7 @@ class AbstractService(ABC):
             self.database_manager.call_query(query, (status, id))
 
         except Exception as e:
-            throw_error(e)
+            raise RuntimeError(e)
         finally:
             self.database_manager.close_connection()
 
@@ -105,7 +104,7 @@ class AbstractService(ABC):
 
             return file_log
         except Exception as e:
-            throw_error(e)
+            raise RuntimeError(e)
         finally:
             self.database_manager.close_connection()
 

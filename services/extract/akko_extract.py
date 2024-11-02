@@ -208,10 +208,6 @@ class AkkoExtract(AbsExtract, ABC):
 
         file_path = generate_file_name(data_path)
 
-        print(f"Config ID: {self.config.id}")
-        print(f"Service Status: {ServiceStatus.RE.value}")
-        print(f"File Path: {file_path}")
-
         try:
             log_id = self.create_file_log(self.config.id, ServiceStatus.RE.value, file_path)
         except Exception as e:

@@ -26,7 +26,7 @@ class DatabaseManager:
             self.connection.commit()
             return self.cursor.fetchall()
         except Exception as e:
-            throw_error(e)
+            raise RuntimeError(e)
 
     def call_query(self, query, args=None):
         try:
@@ -34,7 +34,7 @@ class DatabaseManager:
             self.connection.commit()
             return self.cursor.fetchall()
         except Exception as e:
-            throw_error(e)
+            raise RuntimeError(e)
 
     def call_function(self, function_name, args):
         try:
@@ -42,5 +42,5 @@ class DatabaseManager:
             self.connection.commit()
             return self.cursor.fetchall()
         except Exception as e:
-            throw_error(e)
+            raise RuntimeError(e)
 
