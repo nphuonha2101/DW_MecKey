@@ -21,7 +21,11 @@ load_dotenv()
 
 def generate_file_name(data_path):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f'{data_path}/akko_{timestamp}.csv'
+    # return f'{data_path}/akko_{timestamp}.csv'
+    result = f'{data_path}/akko_{timestamp}.csv'
+    result = result.replace("\\", "/")
+    result = result.replace("//", "/")
+    return result
 
 
 def scrape_product_in_list(detail_soup, ul_tag):

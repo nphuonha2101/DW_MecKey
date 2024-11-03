@@ -52,3 +52,4 @@ class DatabaseManager:
         except Exception as e:
             raise RuntimeError(e)
 
+

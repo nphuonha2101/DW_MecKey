@@ -36,21 +36,23 @@ class AkkoProcessing(AbstractService):
         # PX: Processing
         self.create_file_log(self.file_config.id, ServiceStatus.PX, self.file_log.file_path)
 
-        data_staging_db_name = os.getenv('STAGING_DB_NAME')
-        insert_sql = os.getenv('INSERT_TO_STAGING_SQL')
-
-        insert_sql = insert_sql.replace('%file_path%', f"'{self.file_log.file_path}'", 1)
-        insert_sql = insert_sql.replace('%db_name%', f"`{data_staging_db_name}`", 1)
-        insert_sql = insert_sql.replace('%raw_table_name%', f"`{self.file_config.staging_raw_table_name}`", 1)
+        # data_staging_db_name = os.getenv('STAGING_DB_NAME')
+        # insert_sql = os.getenv('INSERT_TO_STAGING_SQL')
+        #
+        # insert_sql = insert_sql.replace('%file_path%', f"'{self.file_log.file_path}'", 1)
+        # insert_sql = insert_sql.replace('%db_name%', f"`{data_staging_db_name}`", 1)
+        # insert_sql = insert_sql.replace('%raw_table_name%', f"`{self.file_config.staging_raw_table_name}`", 1)
 
         try:
-            print(insert_sql)
-            self.database_manager.call_query(f"TRUNCATE {self.file_config.staging_raw_table_name}")
-            self.database_manager.call_query(insert_sql)
+            # print(insert_sql)
+            # self.database_manager.call_query(f"TRUNCATE {self.file_config.staging_raw_table_name}")
+            # self.database_manager.call_query(insert_sql)
+            self.insert_file_to_staging()
 
             # SP
             self.create_file_log(self.file_config.id, ServiceStatus.SP, self.file_log.file_path)
-            self.update_log_to_ui(EventLevel.SUCCESS, f"Processing completed successfully. SQL: {insert_sql}")
+            #self.update_log_to_ui(EventLevel.SUCCESS, f"Processing completed successfully. SQL: {insert_sql}")
+            self.update_log_to_ui(EventLevel.SUCCESS, f"Processing completed successfully.")
             self.update_progress_to_ui(EventLevel.SUCCESS, f"Processing successful for file: {self.file_log.file_path}")
 
         except Exception as e:
@@ -74,3 +76,28 @@ class AkkoProcessing(AbstractService):
 
         self.update_log_to_ui(EventLevel.INFO, f"Processing {self.file_log.file_path} Completed. Ready for transform")
         self.update_progress_to_ui(EventLevel.INFO, f"Processing {self.file_log.file_path} Complete. Ready for transform")
+
+    def insert_file_to_staging(self):
+            try:
+                data_staging_db_name = os.getenv('STAGING_DB_NAME')
+                insert_sql = os.getenv('INSERT_TO_STAGING_SQL')
+
+                insert_sql = insert_sql.replace('%file_path%', f"'{self.file_log.file_path}'", 1)
+                insert_sql = insert_sql.replace('%db_name%', f"`{data_staging_db_name}`", 1)
+                insert_sql = insert_sql.replace('%raw_table_name%', f"`{self.file_config.staging_raw_table_name}`", 1)
+
+                self.database_manager.connect_to_db(
+                    host=os.getenv('STAGING_DB_HOST'),
+                    user=os.getenv('STAGING_DB_USER'),
+                    password=os.getenv('STAGING_DB_PASSWORD'),
+                    db=os.getenv('STAGING_DB_NAME')
+                )
+
+                print(insert_sql)
+
+                self.database_manager.call_query(f"TRUNCATE TABLE {data_staging_db_name}.{self.file_config.staging_raw_table_name}")
+                self.database_manager.call_query(insert_sql)
+            except Exception as e:
+                raise RuntimeError(e)
+            finally:
+                self.database_manager.close_connection()
