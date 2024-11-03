@@ -161,7 +161,7 @@ class AkkoExtract(AbsExtract, ABC):
             self.config: FileConfig = self.get_file_config(self.feed_key)
             print(f"Configuration loaded: {self.config}")
         except Exception as e:
-            self.update_ui(EventLevel.ERROR, f"Failed to load configuration. Caused by: {e}")
+            self.update_log_to_ui(EventLevel.ERROR, f"Failed to load configuration. Caused by: {e}")
             print(f"Error: {e}")
 
     def scrape_product_details(self, detail_url):
@@ -201,22 +201,37 @@ class AkkoExtract(AbsExtract, ABC):
     def extract(self, num_pages: int):
 
         if self.config is None:
-            self.update_ui(EventLevel.ERROR, "Failed to load configuration.")
+            self.update_log_to_ui(EventLevel.ERROR, "Failed to load configuration.")
+            self.update_progress_to_ui(EventLevel.ERROR, "Extract failed. Failed to load configuration.")
             return
         base_url = self.config.source_url
         data_path = self.config.folder_data_path
 
         file_path = generate_file_name(data_path)
 
+        # Ready extract
         try:
-            log_id = self.create_file_log(self.config.id, ServiceStatus.RE.value, file_path)
+            self.create_file_log(self.config.id, ServiceStatus.RE, file_path)
+            self.update_progress_to_ui(EventLevel.INFO, "Ready to extract")
         except Exception as e:
-            self.update_ui(EventLevel.ERROR, f"Failed to create file log. Caused by: {e}")
+            self.update_log_to_ui(EventLevel.ERROR, f"Failed to create file log. Caused by: {e}")
+            self.update_progress_to_ui(EventLevel.ERROR, f"Extract failed. Please check log for more information.")
             print(f"Error: {e}")
             return
 
         product_details = []
         num_pages = int(num_pages)
+
+        # Extracting data
+        try:
+            self.create_file_log(self.config.id, ServiceStatus.EX, file_path)
+            self.update_progress_to_ui(EventLevel.INFO, "Extracting data")
+        except Exception as e:
+            self.update_log_to_ui(EventLevel.ERROR, f"Failed to create file log. Caused by: {e}")
+            self.update_progress_to_ui(EventLevel.ERROR, f"Extract failed. Please check log for more information.")
+            print(f"Error: {e}")
+            return
+
         for page in range(1, num_pages + 1):
             url = f"{base_url}{page}/"
             response = self.fetch_page(url)
@@ -247,12 +262,14 @@ class AkkoExtract(AbsExtract, ABC):
                         **details,  # Thêm thông tin chi tiết vào từ điển
                     })
                 print(f"Finished scraping page {page}")
-                self.update_ui(EventLevel.SUCCESS, f"Finished scraping page {page}")
+                self.update_log_to_ui(EventLevel.SUCCESS, f"Finished scraping page {page}")
                 time.sleep(1)  # Thêm thời gian chờ giữa các yêu cầu
             else:
                 print(f"Failed to retrieve page {page}.")
-                self.update_file_log(log_id, ServiceStatus.FE)
-                self.update_ui(EventLevel.ERROR, f"Failed to retrieve page {page}.")
+                # Failed extract
+                self.create_file_log(self.config.id, ServiceStatus.FE, file_path)
+                self.update_log_to_ui(EventLevel.ERROR, f"Failed to retrieve page {page}.")
+                self.update_progress_to_ui(EventLevel.ERROR, f"Extract failed. Failed to retrieve page {page}.")
                 return
 
         df = pd.DataFrame(product_details)
@@ -264,17 +281,18 @@ class AkkoExtract(AbsExtract, ABC):
 
         absolute_path = os.path.abspath(file_path)
         print(f"Data saved to '{absolute_path}'.")
-        self.update_ui(EventLevel.SUCCESS, f"Data saved to '{absolute_path}'.")
+        self.update_log_to_ui(EventLevel.SUCCESS, f"Data saved to '{absolute_path}'.")
+        self.update_progress_to_ui(EventLevel.SUCCESS, f"${self.__class__.__name__}" + " is finished")
 
-        self.update_file_log(log_id, ServiceStatus.SE.value)
+        # Success extract
+        self.create_file_log(self.config.id, ServiceStatus.SE, file_path)
 
     def run(self):
         try:
-            self.update_ui(EventLevel.INFO, f"${self.__class__.__name__}" + " is running")
+            self.update_progress_to_ui(EventLevel.INFO, f"${self.__class__.__name__}" + " is running")
             self.extract(self.config.num_pages)
-            self.update_ui(EventLevel.SUCCESS, f"${self.__class__.__name__}" + " is finished")
         except Exception as e:
-            self.update_ui(EventLevel.ERROR, f"${self.__class__.__name__} got problem. Caused by: {e}")
+            self.update_progress_to_ui(EventLevel.ERROR, f"${self.__class__.__name__} got problem. Caused by: {e}")
             print(f"Error: {e}")
 
 

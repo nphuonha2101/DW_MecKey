@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from db.db_manager import DatabaseManager
 from event.event_bus import EventBus
@@ -13,12 +13,12 @@ class AbsExtract(AbstractService, ABC):
 
 
     def fetch_page(self, url):
-        """Gửi yêu cầu đến một URL và trả về phản hồi."""
+        """Fetch page from url then return response"""
         try:
             response = requests.get(url)
             response.raise_for_status()  # Kiểm tra lỗi HTTP
             return response
         except requests.RequestException as e:
             print(f"Error fetching {url}: {e}")
-            self.update_ui(EventLevel.ERROR, f"Error fetching {url}: {e}")
+            self.update_log_to_ui(EventLevel.ERROR, f"Error fetching {url}: {e}")
             return None
