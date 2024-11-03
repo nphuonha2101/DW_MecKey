@@ -14,6 +14,7 @@ import pandas as pd
 from datetime import datetime
 from utils.convert_utils import convert_price
 from services.status.service_status import ServiceStatus
+import csv
 
 load_dotenv()
 
@@ -274,6 +275,14 @@ class AkkoExtract(AbsExtract, ABC):
 
         df = pd.DataFrame(product_details)
 
+        df.drop(columns=['hotswap'], inplace=True)
+        # Generate id
+        df['id'] = range(1, len(df) + 1)
+        # Make id column stand at first column
+        df = df[['id'] + df.columns[:-1].tolist()]
+        # Make date column at the tail of df
+        df['date'] = pd.to_datetime(datetime.now().date())
+
         if not os.path.exists(data_path):
             os.makedirs(data_path)
 
@@ -286,11 +295,42 @@ class AkkoExtract(AbsExtract, ABC):
 
         # Success extract
         self.create_file_log(self.config.id, ServiceStatus.SE, file_path)
+        return file_path
+
+    def importToStaging(self, file_path    ):
+        absolute_path = os.path.abspath(file_path)
+        tbl = 'raw_akko'
+        cnt = 0
+        with open(absolute_path,  encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter=",")
+            for row in reader:
+                row.pop()
+                row = ['NULL' if val == '' else val for val in row]
+                row = [x.replace("'", "''") for x in row]
+                out = "'" + "', '".join(str(item) for item in row) + "'"
+                out = out.replace("'NULL'", 'NULL')
+
+                 # update sql
+                query = "INSERT INTO " + tbl + " VALUES (" + out + ")"
+
+            # connect db staging
+
+            #     cursor = connection.cursor()
+            #
+            #     cursor.execute(query)
+            #     cnt = cnt + 1
+            #
+            # cursor.commit()
+
+        print("Uploaded " + str(cnt) + " rows into table " + tbl + ".")
+
 
     def run(self):
         try:
             self.update_progress_to_ui(EventLevel.INFO, f"${self.__class__.__name__}" + " is running")
-            self.extract(self.config.num_pages)
+            file_path = self.extract(self.config.num_pages)
+            self.importToStaging(file_path)
+
         except Exception as e:
             self.update_progress_to_ui(EventLevel.ERROR, f"${self.__class__.__name__} got problem. Caused by: {e}")
             print(f"Error: {e}")
