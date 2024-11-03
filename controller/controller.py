@@ -7,11 +7,14 @@ from event.event_type import EventType
 from gui.gui import GUI
 from app_module.injector_init import injector
 from services.extract.akko_extract import AkkoExtract
+from services.load_to_warehouse.load_to_warehouse import LoadToWarehouse
 
 
 def begin_process():
     akko_extract = injector.get(AkkoExtract)
-    akko_extract.run()
+    # akko_extract.run()
+    load_to_warehouse = injector.get(LoadToWarehouse)
+    load_to_warehouse.run()
 
 
 def handle_gui_event(event: Event):

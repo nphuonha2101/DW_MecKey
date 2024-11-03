@@ -14,3 +14,12 @@ class FileConfig:
     def from_db(cls, result):
         return cls(*result)
 
+
+    def __str__(self):
+        return (
+            f"FileConfig(id={self.id}, feed_name={self.feed_name}, source_url='{self.source_url}', "
+            f"folder_data_path='{self.folder_data_path}', feed_key='{self.feed_key}', to_staging_proc_name={self.to_staging_proc_name}, "
+            f"transform_proc_name={self.transform_proc_name}, load_proc_name={self.load_proc_name}, num_pages={self.num_pages})"
+        )
+
+
