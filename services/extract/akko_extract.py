@@ -14,13 +14,18 @@ import pandas as pd
 from datetime import datetime
 from utils.convert_utils import convert_price
 from services.status.service_status import ServiceStatus
+import csv
 
 load_dotenv()
 
 
 def generate_file_name(data_path):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f'{data_path}/akko_{timestamp}.csv'
+    # return f'{data_path}/akko_{timestamp}.csv'
+    result = f'{data_path}/akko_{timestamp}.csv'
+    result = result.replace("\\", "/")
+    result = result.replace("//", "/")
+    return result
 
 
 def scrape_product_in_list(detail_soup, ul_tag):
@@ -163,6 +168,7 @@ class AkkoExtract(AbsExtract, ABC):
         except Exception as e:
             self.update_log_to_ui(EventLevel.ERROR, f"Failed to load configuration. Caused by: {e}")
             print(f"Error: {e}")
+        self.file_path = None
 
     def scrape_product_details(self, detail_url):
         """Trích xuất thông tin chi tiết của sản phẩm từ trang chi tiết."""
@@ -207,11 +213,11 @@ class AkkoExtract(AbsExtract, ABC):
         base_url = self.config.source_url
         data_path = self.config.folder_data_path
 
-        file_path = generate_file_name(data_path)
+        self.file_path = generate_file_name(data_path)
 
         # Ready extract
         try:
-            self.create_file_log(self.config.id, ServiceStatus.RE, file_path)
+            self.create_file_log(self.config.id, ServiceStatus.RE, self.file_path)
             self.update_progress_to_ui(EventLevel.INFO, "Ready to extract")
         except Exception as e:
             self.update_log_to_ui(EventLevel.ERROR, f"Failed to create file log. Caused by: {e}")
@@ -224,7 +230,7 @@ class AkkoExtract(AbsExtract, ABC):
 
         # Extracting data
         try:
-            self.create_file_log(self.config.id, ServiceStatus.EX, file_path)
+            self.create_file_log(self.config.id, ServiceStatus.EX, self.file_path)
             self.update_progress_to_ui(EventLevel.INFO, "Extracting data")
         except Exception as e:
             self.update_log_to_ui(EventLevel.ERROR, f"Failed to create file log. Caused by: {e}")
@@ -267,32 +273,50 @@ class AkkoExtract(AbsExtract, ABC):
             else:
                 print(f"Failed to retrieve page {page}.")
                 # Failed extract
-                self.create_file_log(self.config.id, ServiceStatus.FE, file_path)
+                self.create_file_log(self.config.id, ServiceStatus.FE, self.file_path)
                 self.update_log_to_ui(EventLevel.ERROR, f"Failed to retrieve page {page}.")
                 self.update_progress_to_ui(EventLevel.ERROR, f"Extract failed. Failed to retrieve page {page}.")
                 return
 
         df = pd.DataFrame(product_details)
 
+        df.drop(columns=['hotswap'], inplace=True)
+        # Generate id
+        df['id'] = range(1, len(df) + 1)
+        # Make id column stand at first column
+        df = df[['id'] + df.columns[:-1].tolist()]
+        # Make date column at the tail of df
+        df['date'] = pd.to_datetime(datetime.now().date())
+
         if not os.path.exists(data_path):
             os.makedirs(data_path)
 
-        df.to_csv(file_path, index=False)
+        df.to_csv(self.file_path, index=False)
 
-        absolute_path = os.path.abspath(file_path)
+        absolute_path = os.path.abspath(self.file_path)
         print(f"Data saved to '{absolute_path}'.")
         self.update_log_to_ui(EventLevel.SUCCESS, f"Data saved to '{absolute_path}'.")
         self.update_progress_to_ui(EventLevel.SUCCESS, f"${self.__class__.__name__}" + " is finished")
 
         # Success extract
-        self.create_file_log(self.config.id, ServiceStatus.SE, file_path)
+        self.create_file_log(self.config.id, ServiceStatus.SE, self.file_path)
+
 
     def run(self):
+        self.update_progress_to_ui(EventLevel.INFO, f"${self.__class__.__name__}" + " is running")
         try:
-            self.update_progress_to_ui(EventLevel.INFO, f"${self.__class__.__name__}" + " is running")
             self.extract(self.config.num_pages)
         except Exception as e:
             self.update_progress_to_ui(EventLevel.ERROR, f"${self.__class__.__name__} got problem. Caused by: {e}")
             print(f"Error: {e}")
+            return
+
+        # Update RP
+        self.create_file_log(self.config.id, ServiceStatus.RP, self.file_path)
+
+        self.update_log_to_ui(EventLevel.INFO,
+                              f"Processing {self.file_path} Completed. Ready for transform")
+        self.update_progress_to_ui(EventLevel.INFO,
+                                   f"Processing {self.file_path} Complete. Ready for transform")
 
 

@@ -5,6 +5,7 @@ from db.db_manager import DatabaseManager
 from gui.gui import GUI
 from event.event_bus import EventBus
 from services.extract.akko_extract import AkkoExtract
+from services.processing.akko_processing import AkkoProcessing
 from services.load_to_warehouse.load_to_warehouse import LoadToWarehouse
 
 
@@ -32,5 +33,11 @@ class AppModule(Module):
 
     @singleton
     @provider
+    def provider_akko_process(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoProcessing:
+        return AkkoProcessing(database_manager, event_bus)
+
+    @singleton
+    @provider
     def provider_load_to_warehouse(self, database_manager: DatabaseManager, event_bus: EventBus) -> LoadToWarehouse:
         return LoadToWarehouse(database_manager, event_bus)
+
