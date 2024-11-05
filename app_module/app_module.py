@@ -7,6 +7,7 @@ from event.event_bus import EventBus
 from services.extract.akko_extract import AkkoExtract
 from services.processing.akko_processing import AkkoProcessing
 from services.load_to_warehouse.load_to_warehouse import LoadToWarehouse
+from services.transform.akko_transform import AkkoTransform
 
 
 class AppModule(Module):
@@ -41,3 +42,8 @@ class AppModule(Module):
     def provider_load_to_warehouse(self, database_manager: DatabaseManager, event_bus: EventBus) -> LoadToWarehouse:
         return LoadToWarehouse(database_manager, event_bus)
 
+
+    @singleton
+    @provider
+    def provider_transform(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoTransform:
+        return AkkoTransform(database_manager, event_bus);
