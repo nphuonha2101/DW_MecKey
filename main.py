@@ -7,7 +7,7 @@ from gui.gui import GUI
 def main():
     event_bus = injector.get(EventBus)
     gui = injector.get(GUI)
-    controller = Controller(event_bus, gui)
+    Controller(event_bus, gui)
     gui.create()
 
 if __name__ == '__main__':

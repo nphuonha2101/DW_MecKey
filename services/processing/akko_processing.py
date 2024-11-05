@@ -18,6 +18,20 @@ class AkkoProcessing(AbstractService):
         self.file_log = None
         self.file_config = None
 
+    def get_file_log(self):
+        try:
+            self.file_log = self.get_file_log_by_status_and_feed_key(ServiceStatus.RP, self.feed_key)
+        except Exception as e:
+            self.update_log_to_ui(EventLevel.ERROR, f"Cannot get file log with status RP. Caused by: {e}")
+            self.update_progress_to_ui(EventLevel.ERROR, f"Processing failed! No file log is ready for processing. Now checking for file log with status FP")
+
+            try:
+                self.file_log = self.get_file_log_by_status_and_feed_key(ServiceStatus.FP, self.feed_key)
+            except Exception as e:
+                self.update_log_to_ui(EventLevel.ERROR, f"Cannot get file log with status FP. Caused by: {e}")
+                self.update_progress_to_ui(EventLevel.ERROR, f"Processing failed! No file log is ready for processing.")
+                return
+
     def to_staging(self):
         try:
             self.file_config = self.get_file_config(self.feed_key)
@@ -26,32 +40,16 @@ class AkkoProcessing(AbstractService):
             self.update_log_to_ui(EventLevel.ERROR, f"Processing failed! Caused by: {e}")
             return
 
-        try:
-            self.file_log = self.get_file_log_by_status_and_feed_key(ServiceStatus.RP, self.feed_key)
-        except Exception as e:
-            self.update_log_to_ui(EventLevel.ERROR, f"Cannot get file log. Caused by: {e}")
-            self.update_log_to_ui(EventLevel.ERROR, f"Processing failed! Caused by: {e}")
-            return
+        self.get_file_log()       
 
         # PX: Processing
         self.create_file_log(self.file_config.id, ServiceStatus.PX, self.file_log.file_path)
 
-        # data_staging_db_name = os.getenv('STAGING_DB_NAME')
-        # insert_sql = os.getenv('INSERT_TO_STAGING_SQL')
-        #
-        # insert_sql = insert_sql.replace('%file_path%', f"'{self.file_log.file_path}'", 1)
-        # insert_sql = insert_sql.replace('%db_name%', f"`{data_staging_db_name}`", 1)
-        # insert_sql = insert_sql.replace('%raw_table_name%', f"`{self.file_config.staging_raw_table_name}`", 1)
-
         try:
-            # print(insert_sql)
-            # self.database_manager.call_query(f"TRUNCATE {self.file_config.staging_raw_table_name}")
-            # self.database_manager.call_query(insert_sql)
             self.insert_file_to_staging()
 
             # SP
             self.create_file_log(self.file_config.id, ServiceStatus.SP, self.file_log.file_path)
-            #self.update_log_to_ui(EventLevel.SUCCESS, f"Processing completed successfully. SQL: {insert_sql}")
             self.update_log_to_ui(EventLevel.SUCCESS, f"Processing completed successfully.")
             self.update_progress_to_ui(EventLevel.SUCCESS, f"Processing successful for file: {self.file_log.file_path}")
 
@@ -85,6 +83,8 @@ class AkkoProcessing(AbstractService):
                 insert_sql = insert_sql.replace('%file_path%', f"'{self.file_log.file_path}'", 1)
                 insert_sql = insert_sql.replace('%db_name%', f"`{data_staging_db_name}`", 1)
                 insert_sql = insert_sql.replace('%raw_table_name%', f"`{self.file_config.staging_raw_table_name}`", 1)
+                insert_sql = insert_sql.replace('%file_delimiter%', f"'{self.file_config.file_delimiter}'", 1)
+                insert_sql = insert_sql.replace('%line_terminator%', f"'{self.file_config.line_terminator}'", 1)
 
                 self.database_manager.connect_to_db(
                     host=os.getenv('STAGING_DB_HOST'),

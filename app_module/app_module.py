@@ -45,5 +45,5 @@ class AppModule(Module):
 
     @singleton
     @provider
-    def provider_transform(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoTransform:
+    def provider_akko_transform(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoTransform:
         return AkkoTransform(database_manager, event_bus);

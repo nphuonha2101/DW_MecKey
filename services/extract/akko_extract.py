@@ -227,6 +227,7 @@ class AkkoExtract(AbsExtract, ABC):
 
         product_details = []
         num_pages = int(num_pages)
+        start_page = int(self.config.start_page)
 
         # Extracting data
         try:
@@ -238,7 +239,7 @@ class AkkoExtract(AbsExtract, ABC):
             print(f"Error: {e}")
             return
 
-        for page in range(1, num_pages + 1):
+        for page in range(start_page, num_pages + 1):
             url = f"{base_url}{page}/"
             response = self.fetch_page(url)
             if response is not None:
@@ -306,17 +307,19 @@ class AkkoExtract(AbsExtract, ABC):
         self.update_progress_to_ui(EventLevel.INFO, f"${self.__class__.__name__}" + " is running")
         try:
             self.extract(self.config.num_pages)
+
+            # Update RP
+            self.create_file_log(self.config.id, ServiceStatus.RP, self.file_path)
+
+            self.update_log_to_ui(EventLevel.INFO,
+                                f"Extracting data for file: {self.file_path} Complete. Ready for load to staging")
+            self.update_progress_to_ui(EventLevel.INFO,
+                                    f"Extracting data for file: {self.file_path} Complete. Ready for load to staging")
         except Exception as e:
             self.update_progress_to_ui(EventLevel.ERROR, f"${self.__class__.__name__} got problem. Caused by: {e}")
             print(f"Error: {e}")
             return
 
-        # Update RP
-        self.create_file_log(self.config.id, ServiceStatus.RP, self.file_path)
-
-        self.update_log_to_ui(EventLevel.INFO,
-                              f"Processing {self.file_path} Completed. Ready for transform")
-        self.update_progress_to_ui(EventLevel.INFO,
-                                   f"Processing {self.file_path} Complete. Ready for transform")
+        
 
 

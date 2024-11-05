@@ -25,7 +25,7 @@ class AbstractService(ABC):
         self.event_bus = event_bus
 
     @abstractmethod
-    def run(self):
+    def run(self, args=None):
         pass
 
     def update_progress_to_ui(self, event_level: EventLevel, message):
@@ -68,14 +68,7 @@ class AbstractService(ABC):
                 os.getenv('CONTROL_DB_NAME')
             )
 
-            query = f"INSERT INTO {os.getenv('FILE_LOG_TABLE_NAME')} (id_config, status, file_path, description) VALUES (%s, %s, %s, %s)"
-            self.database_manager.call_query(query, (id_config, ServiceStatus.get_value(status), file_path, status_message[status]))
-
-            last_id_query = "SELECT LAST_INSERT_ID()"
-            last_id_result = self.database_manager.call_query(last_id_query)
-            last_id = last_id_result[0][0]
-
-            return last_id
+            self.database_manager.call_procedure(os.getenv('CREATE_FILE_LOG_PROC_NAME'), (id_config, ServiceStatus.get_value(status), file_path, status_message.get(status)))
         except Exception as e:
             self.update_log_to_ui(EventLevel.ERROR, f"Error creating file log: {e}")
             raise RuntimeError(e)
@@ -116,8 +109,8 @@ class AbstractService(ABC):
                 os.getenv('CONTROL_DB_NAME')
             )   
 
-            query = f"SELECT * FROM {os.getenv('FILE_LOG_TABLE_NAME')} WHERE status = %s AND id_config = (SELECT id FROM {os.getenv('FILE_CONFIG_TABLE_NAME')} WHERE feed_key = %s)"
-            results = self.database_manager.call_query(query, (ServiceStatus.get_value(status), feed_key))
+            query = f"SELECT * FROM {os.getenv('FILE_LOG_TABLE_NAME')} WHERE is_active = %s AND status = %s AND id_config = (SELECT id FROM {os.getenv('FILE_CONFIG_TABLE_NAME')} WHERE feed_key = %s)"
+            results = self.database_manager.call_query(query, (1, ServiceStatus.get_value(status), feed_key))
             file_log = FileLog.from_db(results[0])
 
             return file_log

@@ -9,6 +9,7 @@ from app_module.injector_init import injector
 from services.extract.akko_extract import AkkoExtract
 from services.processing.akko_processing import AkkoProcessing
 from services.transform.akko_transform import AkkoTransform
+from services.load_to_warehouse.load_to_warehouse import LoadToWarehouse
 
 
 def begin_process():
@@ -18,8 +19,11 @@ def begin_process():
     # akko_process = injector.get(AkkoProcessing)
     # akko_process.run()
 
-    akko_process = injector.get(AkkoTransform)
-    akko_process.run()
+    # akko_transform = injector.get(AkkoTransform)
+    # akko_transform.run()
+
+    load_to_warehouse = injector.get(LoadToWarehouse)
+    load_to_warehouse.run()
 
 
 

@@ -1,11 +1,12 @@
 class FileLog:
-    def __init__(self, id, id_config, status, time, file_path, description):
+    def __init__(self, id, id_config, status, time, file_path, description, is_active):
         self.id = id
         self.id_config = id_config
         self.status = status
         self.time = time
         self.file_path = file_path
         self.description = description
+        self.is_active = is_active
 
     @classmethod
     def from_db(cls, result):
