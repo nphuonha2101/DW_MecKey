@@ -1,10 +1,13 @@
 from injector import Module, provider, singleton
 
-from controller.controller import Controller
 from db.db_manager import DatabaseManager
-from event.event_bus import EventBus
+
 from gui.gui import GUI
+from event.event_bus import EventBus
 from services.extract.akko_extract import AkkoExtract
+from services.processing.akko_processing import AkkoProcessing
+from services.load_to_warehouse.load_to_warehouse import LoadToWarehouse
+from services.transform.akko_transform import AkkoTransform
 
 
 class AppModule(Module):
@@ -26,10 +29,21 @@ class AppModule(Module):
 
     @singleton
     @provider
-    def provider_controller(self, event_bus: EventBus, gui: GUI) -> Controller:
-        return Controller(event_bus, gui)
+    def provider_akko_extract(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoExtract:
+        return AkkoExtract(database_manager, event_bus)
 
     @singleton
     @provider
-    def provider_akko_extract(self, database_manager: DatabaseManager) -> AkkoExtract:
-        return AkkoExtract(database_manager)
+    def provider_akko_process(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoProcessing:
+        return AkkoProcessing(database_manager, event_bus)
+
+    @singleton
+    @provider
+    def provider_load_to_warehouse(self, database_manager: DatabaseManager, event_bus: EventBus) -> LoadToWarehouse:
+        return LoadToWarehouse(database_manager, event_bus)
+
+
+    @singleton
+    @provider
+    def provider_akko_transform(self, database_manager: DatabaseManager, event_bus: EventBus) -> AkkoTransform:
+        return AkkoTransform(database_manager, event_bus);

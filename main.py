@@ -1,13 +1,17 @@
-from app_module.app_module import AppModule
-from injector import Injector
-
 from controller.controller import Controller
 from event.event_bus import EventBus
+from app_module.injector_init import injector
+from gui.gui import GUI
 
-injector = Injector([AppModule])
-controller = injector.get(Controller)  # Ensure Controller is instantiated
-event_bus = injector.get(EventBus)
-controller.gui.create()
-print(event_bus.subscribers)  # Print subscribers after Controller is instantiated
+
+def main():
+    event_bus = injector.get(EventBus)
+    gui = injector.get(GUI)
+    Controller(event_bus, gui)
+    gui.create()
+
+if __name__ == '__main__':
+    main()
+
 
 

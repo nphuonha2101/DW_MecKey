@@ -1,7 +1,7 @@
 import threading
 import tkinter as tk
-from tkinter import scrolledtext, Event
-
+from datetime import datetime
+from tkinter import scrolledtext, Event, ttk
 from dotenv import load_dotenv
 
 from event.event_bus import EventBus
@@ -41,9 +41,29 @@ def button_style():
     }
 
 
+def _update_text_area(event_type, data, text_area=None):
+    text_area.config(state=tk.NORMAL)
+    text_area.insert(tk.END, f"{data}\n")  # Sử dụng data thay cho message nếu cần
+
+    if  event_type == EventLevel.ERROR:
+        text_area.tag_add("error", "1.0", "end")
+        text_area.tag_config("error", foreground="red")
+    elif event_type == EventLevel.SUCCESS:
+        text_area.tag_add("success", "1.0", "end")
+        text_area.tag_config("success", foreground="green")
+    elif event_type == EventLevel.WARNING:
+        text_area.tag_add("warning", "1.0", "end")
+        text_area.tag_config("warning", foreground="orange")
+    elif event_type == EventLevel.INFO:
+        text_area.tag_add("info", "1.0", "end")
+        text_area.tag_config("info", foreground="blue")
+    text_area.config(state=tk.DISABLED)
+
+
 class GUI:
     def __init__(self, event_bus: EventBus):
-        self.text_area = None
+        self.text_area_log = None
+        self.text_area_progress = None
         self.button_frame = None
         self.event_bus = event_bus
 
@@ -53,8 +73,19 @@ class GUI:
         root.title("Tool")
         center_window(root, 700, 500)
 
-        self.text_area = create_text_area(root)
-        self.button_frame = self.create_button_frame(root)
+        notebook = ttk.Notebook(root)
+        notebook.pack(expand=1, fill='both')
+
+        # Progress tab
+        tab1 = ttk.Frame(notebook)
+        notebook.add(tab1, text='Progress')
+        self.text_area_progress = create_text_area(tab1)
+        self.button_frame = self.create_button_frame(tab1)
+
+        # Log tab
+        tab2 = ttk.Frame(notebook)
+        notebook.add(tab2, text='Log')
+        self.text_area_log = create_text_area(tab2)
 
         root.mainloop()
 
@@ -73,27 +104,12 @@ class GUI:
         thread = threading.Thread(target=lambda: self.event_bus.publish(EventType.GUI_NOTIFY, Event(EventLevel.BUTTON_CLICK, None)))
         thread.start()
 
-    # def run_akko(self, button):
-    #     self.process_manager.run_processes()
-    #     button.config(state=tk.NORMAL)
 
     def update_progress(self, event_type, data):
-        self.text_area.config(state=tk.NORMAL)
-        self.text_area.insert(tk.END, f"{data}\n")  # Sử dụng data thay cho message nếu cần
+        data = f"[{event_type}] {datetime.now()}: {data}"
+        _update_text_area(event_type, data, self.text_area_progress)
 
-        if  event_type == EventLevel.ERROR:
-            self.text_area.tag_add("error", "1.0", "end")
-            self.text_area.tag_config("error", foreground="red")
-        elif event_type == EventLevel.SUCCESS:
-            self.text_area.tag_add("success", "1.0", "end")
-            self.text_area.tag_config("success", foreground="green")
-        elif event_type == EventLevel.WARNING:
-            self.text_area.tag_add("warning", "1.0", "end")
-            self.text_area.tag_config("warning", foreground="orange")
-        elif event_type == EventLevel.INFO:
-            self.text_area.tag_add("info", "1.0", "end")
-            self.text_area.tag_config("info", foreground="blue")
-
-
-        self.text_area.config(state=tk.DISABLED)
+    def update_log(self, event_type, data):
+        data = f"[{event_type}] {datetime.now()}: {data}"
+        _update_text_area(event_type, data, self.text_area_log)
 
