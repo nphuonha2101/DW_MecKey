@@ -1,9 +1,0 @@
-python-dotenv
-numpy
-requests
-pandas
-bs4
-schedule
-pymysql
-injector
-mypy
