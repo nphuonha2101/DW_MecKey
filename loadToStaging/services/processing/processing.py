@@ -94,7 +94,7 @@ class Processing:
                 return FileLog(*result)
             else:
                 raise RuntimeError(
-                    f"File log with file path '{file_path}' and status '{ServiceStatus.get_value(status)}' not found.")
+                    f"File log with file path '{file_path}' and status '{status}' not found.")
         except Exception as e:
             raise RuntimeError(f"Failed to get file log. Caused by: {e}")
 
@@ -122,7 +122,7 @@ class Processing:
                 return FileConfig(*result)
             else:
                 raise RuntimeError(
-                    f"File configuration with status '{ServiceStatus.get_value(status)}' and file path '{file_path}' not found.")
+                    f"File configuration with status '{status}' and file path '{file_path}' not found.")
         except Exception as e:
             raise RuntimeError(f"Failed to get file configuration. Caused by: {e}")
 
